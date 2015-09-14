@@ -3,7 +3,9 @@ import scrapy
 from scrapy_meizitu.items import ScrapyMeizituItem
 from scrapy.linkextractors import LinkExtractor
 from scrapy.loader import ItemLoader
-import time
+import logging
+
+logger = logging.getLogger('meizitu')
 
 class MeizituSpider(scrapy.Spider):
     name = "meizitu"
@@ -30,16 +32,14 @@ class MeizituSpider(scrapy.Spider):
         currentpage = int(response.xpath("//div[@id='wp_page_numbers']/ul/\
         li[@class='thisclass']/text()").extract()[0]) + 1
         nextURL = 'http://www.meizitu.com/a/list_1_' + str(currentpage) + '.html'
-        print nextURL
-        time.sleep(3)
+        logger.info('Dealing with page: %s', currentpage)
         yield scrapy.Request(url=nextURL, callback=self.parse)
 
         for link in self.link_extractor['content'].extract_links(response):
-            print link.url
-            time.sleep(3)
             yield scrapy.Request(url=link.url, callback=self.parse_content)
 
     def parse_content(self, response):
+        logger.info('Dealing with images: %s', response.url)
         item_load = ItemLoader(item=ScrapyMeizituItem(), response=response)
         item_load.add_value('url', response.url)
         item_load.add_xpath('name', self._x_query['name'])
